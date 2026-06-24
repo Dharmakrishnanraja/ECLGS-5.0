@@ -1,0 +1,998 @@
+python3 << 'PYEOF'
+import os
+
+# Build the complete final HTML
+html = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELGS 5.0 – Loan Amortization Dashboard</title>
+<style>
+:root{
+  --ink:#1a1f2e;--ink-s:#4a5168;--ink-m:#8a91a8;
+  --surf:#f2f4fb;--card:#fff;--bdr:#dde2f0;--bdr-dk:#c4cbdf;
+  --gold:#c8871a;--gold-bg:#fff8ed;--gold-bdr:#f5d9a0;--gold-dk:#a06810;
+  --teal:#0d7c73;--teal-lt:#e4f5f4;--teal-bdr:#9dd8d3;--teal-dk:#0a6460;
+  --slate:#3b4d7a;--slate-bg:#eef1f8;--slate-dk:#2c3a5e;
+  --green:#1a7a3f;--green-bg:#edfaf3;--green-bdr:#9adcba;
+  --red:#c53030;--red-bg:#fff5f5;--red-bdr:#f5a0a0;
+  --purple:#6b44c8;--purple-bg:#f3f0ff;--purple-bdr:#c4b0f5;
+  --y1:#fff3cd;--y1s:#fdf0b8;--y1h:#f8e690;
+  --y2:#e8f4f3;--y2s:#d4ece9;--y2h:#b8ddd9;
+  --sh-sm:0 2px 8px rgba(26,31,46,.07);
+  --sh-md:0 4px 20px rgba(26,31,46,.11);
+  --sh-lg:0 8px 32px rgba(26,31,46,.16);
+  --r-sm:8px;--r-md:14px;--r-lg:20px;--ease:.18s ease
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--surf);color:var(--ink);font-size:14px;line-height:1.55;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--bdr-dk);border-radius:4px}
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0f1320,#1e2a52 55%,#1a3a55);color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:200;box-shadow:var(--sh-lg)}
+.hdr-brand{display:flex;align-items:center;gap:12px}
+.hdr-ico{width:42px;height:42px;background:linear-gradient(135deg,var(--gold),#e8a82a);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 14px rgba(200,135,26,.4);flex-shrink:0}
+.hdr h1{font-size:19px;font-weight:800;letter-spacing:-.3px}
+.hdr h1 em{color:#f5c842;font-style:normal}
+.hdr p{font-size:11px;color:#8da8cc;margin-top:1px}
+.hdr-r{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.pill{background:rgba(255,255,255,.08);color:#c8d4ee;border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 11px;font-size:10.5px;font-weight:700;letter-spacing:.4px}
+.pill.g{background:rgba(200,135,26,.2);color:#f5c842;border-color:rgba(200,135,26,.35)}
+/* SHELL */
+.shell{max-width:1340px;margin:0 auto;padding:26px 20px 80px}
+/* CARD */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:22px 26px}
+.pt{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-s);margin-bottom:16px;padding-bottom:11px;border-bottom:1.5px solid var(--bdr);display:flex;align-items:center;gap:8px}
+/* INPUTS */
+.ig{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:14px;margin-bottom:16px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-s)}
+.fld input,.fld select{padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--r-sm);font-size:13.5px;font-family:inherit;color:var(--ink);background:var(--surf);outline:none;transition:var(--ease)}
+.fld input:focus,.fld select:focus{border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px rgba(13,124,115,.1)}
+.fld .hint{font-size:10px;color:var(--ink-m)}
+.fld .err{font-size:10px;color:var(--red);display:none;font-weight:700}
+.fld .err.on{display:block}
+/* BUTTONS */
+.btn{padding:9px 22px;border:none;border-radius:var(--r-sm);cursor:pointer;font-size:12.5px;font-weight:700;transition:var(--ease);font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.bp{background:var(--teal);color:#fff}.bp:hover{background:var(--teal-dk);transform:translateY(-1px);box-shadow:0 4px 14px rgba(13,124,115,.3)}
+.bs{background:var(--slate-bg);color:var(--slate);border:1.5px solid var(--bdr)}.bs:hover{background:#d8e0f4}
+.be{background:var(--green-bg);color:var(--green);border:1.5px solid var(--green-bdr)}.be:hover{background:#c4edda}
+.bd{background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-bdr)}.bd:hover{background:#fac8c8}
+.bpu{background:var(--purple-bg);color:var(--purple);border:1.5px solid var(--purple-bdr)}.bpu:hover{background:#ddd4fc}
+.sm{padding:6px 13px;font-size:11.5px}
+.br{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cs{font-size:11.5px;color:var(--teal);font-weight:700;margin-left:2px}
+/* TABS */
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--bdr);margin-bottom:24px;overflow-x:auto}
+.tb{padding:10px 17px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink-m);border-bottom:2px solid transparent;margin-bottom:-2px;transition:var(--ease);border-radius:var(--r-sm) var(--r-sm) 0 0;white-space:nowrap;font-family:inherit}
+.tb:hover{color:var(--slate);background:var(--slate-bg)}.tb.on{color:var(--teal);border-color:var(--teal);background:var(--teal-lt)}
+.tp{display:none}.tp.on{display:block}
+/* NOTICES */
+.nt{border-radius:var(--r-sm);padding:11px 15px;font-size:12px;display:flex;gap:9px;align-items:flex-start;margin-bottom:18px;line-height:1.5}
+.ni{font-size:15px;flex-shrink:0;margin-top:1px}
+.nt.info{background:var(--teal-lt);border:1px solid var(--teal-bdr);color:#0a5c55}
+.nt.warn{background:var(--gold-bg);border:1px solid var(--gold-bdr);color:#7a5500}
+.nt.grn{background:var(--green-bg);border:1px solid var(--green-bdr);color:#145530}
+.nt.pur{background:var(--purple-bg);border:1px solid var(--purple-bdr);color:#4a2aaa}
+/* KPIS */
+.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(193px,1fr));gap:12px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r-md);padding:16px 18px 14px;position:relative;overflow:hidden;transition:var(--ease);cursor:default}
+.kpi:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--teal);border-radius:4px 0 0 4px}
+.kpi.g::before{background:var(--gold)}.kpi.sl::before{background:var(--slate)}.kpi.r::before{background:var(--red)}.kpi.gr::before{background:var(--green)}.kpi.pu::before{background:var(--purple)}
+.ki{font-size:18px;margin-bottom:7px}.kl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-m);margin-bottom:4px}
+.kv{font-size:18px;font-weight:900;color:var(--ink);line-height:1.1;letter-spacing:-.3px}.ks{font-size:10.5px;color:var(--ink-m);margin-top:3px}
+/* PHASE ROW */
+.pr{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.pb{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:30px;font-size:11.5px;font-weight:700;border:1.5px solid transparent}
+.pb.y1{background:var(--y1);border-color:var(--gold-bdr);color:#7a5500}.pb.y2{background:var(--y2);border-color:var(--teal-bdr);color:#0a5c55}
+.pd{width:9px;height:9px;border-radius:50%;flex-shrink:0}.pd.y1{background:var(--gold)}.pd.y2{background:var(--teal)}
+/* CHARTS */
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;margin-bottom:22px}
+.cb{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r-md);padding:18px 18px 14px;box-shadow:var(--sh-sm)}
+.cb h3{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-s);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+/* TABLES */
+.tw{overflow-x:auto;border-radius:var(--r-md);border:1px solid var(--bdr);box-shadow:var(--sh-sm);max-height:600px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:#141929;color:#c8d4ee;padding:10px 12px;text-align:right;font-size:10px;font-weight:800;letter-spacing:.4px;white-space:nowrap;position:sticky;top:0;z-index:3}
+thead th:nth-child(1),thead th:nth-child(2),thead th:nth-child(3){text-align:left}
+tbody tr{border-bottom:1px solid rgba(221,226,240,.6);transition:background .1s}
+tbody td{padding:8px 12px;text-align:right;white-space:nowrap}
+tbody td:nth-child(1),tbody td:nth-child(2),tbody td:nth-child(3){text-align:left}
+td.tc{text-align:center}
+tr.r1{background:var(--y1)}tr.r1:nth-child(even){background:var(--y1s)}tr.r1:hover{background:var(--y1h)!important}
+tr.r2{background:var(--y2)}tr.r2:nth-child(even){background:var(--y2s)}tr.r2:hover{background:var(--y2h)!important}
+tr.pd-row{opacity:.5}tr.pd-row td{text-decoration:line-through;color:var(--ink-m)}
+tr.sub td{background:var(--slate-bg);font-weight:800;color:var(--slate);border-top:2px solid var(--slate);font-size:11.5px;text-align:right}
+tr.sub td:nth-child(1){text-align:left}
+tr.gt td{background:#141929;color:#f5c842;font-weight:900;font-size:12.5px;border-top:2px solid var(--gold);text-align:right}
+tr.gt td:nth-child(1){text-align:left}
+.yr-t td,.yr-t th{text-align:center}.yr-t th:nth-child(1),.yr-t td:nth-child(1){text-align:left}
+.pybtn{background:none;border:1.5px solid var(--teal-bdr);color:var(--teal);border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;transition:var(--ease);font-family:inherit}
+.pybtn:hover{background:var(--teal);color:#fff}.pybtn.ud{border-color:var(--red-bdr);color:var(--red)}.pybtn.ud:hover{background:var(--red);color:#fff}
+/* FORMULAS */
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px}
+.fc{background:#f8f9fe;border:1px solid var(--bdr);border-radius:var(--r-md);padding:16px 18px;transition:var(--ease)}
+.fc:hover{box-shadow:var(--sh-md);border-color:var(--teal-bdr)}
+.fc h4{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.6px;color:var(--teal);margin-bottom:9px}
+.mono{font-family:'Courier New',monospace;font-size:11px;background:#141929;color:#7dd3d0;padding:11px 13px;border-radius:var(--r-sm);margin-bottom:9px;line-height:1.85;white-space:pre;overflow-x:auto}
+.fc p{font-size:11.5px;color:var(--ink-s);line-height:1.5}.fc strong{color:var(--gold-dk);font-weight:800}
+/* RESULT BAND */
+.rb{background:linear-gradient(135deg,var(--teal-dk),var(--slate-dk));color:#fff;border-radius:var(--r-md);padding:18px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:16px;margin-bottom:18px;box-shadow:var(--sh-md)}
+.rbi .rl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.55);margin-bottom:3px}
+.rbi .rv{font-size:19px;font-weight:900;color:#f5c842;line-height:1}.rbi .rs{font-size:10.5px;color:rgba(255,255,255,.45);margin-top:2px}
+/* COMPARE */
+.cmp{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--bdr);border-radius:var(--r-md);overflow:hidden;margin-bottom:18px;box-shadow:var(--sh-sm)}
+.ch{background:#141929;color:#c8d4ee;padding:10px 13px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.ch.hl{background:var(--teal);color:#fff}
+.cc{padding:9px 13px;border-bottom:1px solid var(--bdr);text-align:center;font-size:12px}
+.cc.lb{text-align:left;font-weight:600;color:var(--ink-s);background:var(--surf)}
+.cc.win{color:var(--green);font-weight:800;background:var(--green-bg)}.cc.lose{color:var(--red)}
+/* PROGRESS */
+.pgw{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r-md);padding:16px 20px;margin-bottom:18px}
+.pgbg{background:var(--surf);border-radius:10px;height:11px;overflow:hidden;margin:7px 0;display:flex}
+.pgf{height:100%;border-radius:10px;transition:width .6s ease}
+.fp{background:var(--teal)}.fi{background:var(--gold)}
+.pgl{display:flex;gap:12px;font-size:11px;color:var(--ink-s);flex-wrap:wrap}
+.pgl span{display:flex;align-items:center;gap:5px}.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* CALENDAR */
+.calg{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:6px;margin-bottom:22px}
+.cc2{border-radius:var(--r-sm);padding:8px 6px;text-align:center;cursor:pointer;transition:var(--ease);border:1.5px solid transparent;font-size:10.5px;font-weight:600;user-select:none}
+.cc2:hover{transform:scale(1.06);box-shadow:var(--sh-sm)}
+.cc2.mor{background:var(--y1);color:#7a5500;border-color:var(--gold-bdr)}
+.cc2.emi{background:var(--y2);color:#0a5c55;border-color:var(--teal-bdr)}
+.cc2.paid{background:var(--green-bg);border-color:var(--green-bdr);color:var(--green);opacity:.75}
+.cc2.over{background:var(--red-bg);border-color:var(--red-bdr);color:var(--red)}
+.cc2 .cm{font-size:9px;font-weight:900;opacity:.6}.cc2 .ca{font-size:11px;font-weight:900}
+/* CERTIFICATE */
+.cert{background:#fff;border:2px solid var(--gold-bdr);border-radius:var(--r-lg);padding:32px 36px;position:relative;overflow:hidden}
+.cert::before{content:'ELGS 5.0';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:100px;font-weight:900;color:rgba(200,135,26,.04);white-space:nowrap;pointer-events:none}
+.cert-hdr{text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:2px solid var(--gold-bdr)}
+.cert-hdr h2{font-size:20px;font-weight:900;color:var(--slate-dk);letter-spacing:.5px}
+.cert-hdr p{font-size:12px;color:var(--ink-m);margin-top:3px}
+.cert-seal{font-size:40px;margin-bottom:6px}
+.cert-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.cr{background:var(--surf);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cr .ck{font-size:11px;color:var(--ink-m);font-weight:600;flex-shrink:0}
+.cr .cv{font-size:12.5px;font-weight:800;color:var(--ink);text-align:right}
+.cr .cv.go{color:var(--gold-dk)}.cr .cv.te{color:var(--teal-dk)}
+.cert-ftr{text-align:center;padding-top:16px;border-top:1px dashed var(--gold-bdr);font-size:11px;color:var(--ink-m)}
+.cert-ftr strong{color:var(--slate)}
+/* SECTION */
+.sec{font-size:10.5px;font-weight:900;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-s);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.sec::after{content:'';flex:1;height:1.5px;background:var(--bdr);margin-left:4px}
+/* FAB */
+.fab{position:fixed;bottom:26px;right:22px;z-index:999;background:linear-gradient(135deg,var(--teal),var(--slate));color:#fff;border:none;border-radius:50px;padding:12px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(13,124,115,.4);display:flex;align-items:center;gap:8px;transition:var(--ease)}
+.fab:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(13,124,115,.5)}
+/* TWO COL */
+.tc2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:720px){.tc2{grid-template-columns:1fr}}
+/* PRINT */
+@media print{.hdr{position:relative;box-shadow:none}.tab-bar,.br,.fab{display:none!important}.tp{display:block!important;page-break-before:always}.tp:first-of-type{page-break-before:auto}body{background:#fff;font-size:11px}}
+/* MOBILE */
+@media(max-width:580px){.hdr{padding:14px}.shell{padding:14px 10px 60px}.kv{font-size:15px}.cert-grid{grid-template-columns:1fr}.cert{padding:20px 16px}}
+/* ANIMATION */
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.kpi,.cb,.fc,.cr{animation:fu .3s ease both}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-ico">&#x1F3E6;</div>
+    <div>
+      <h1>Jayakumar Bearings - ECLGS <em>5.0</em> &mdash; Loan Amortization Dashboard</h1>
+      <p>Emergency Credit Line Guarantee Scheme (ECLGS) 5.0 &middot; Canara Bank &middot; Rajapalayam Branch &middot; </p>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <span class="pill g">8.75% P.A.</span>
+    <span class="pill">60 MONTHS</span>
+    <span class="pill">ELGS 5.0</span>
+    <button class="btn bs sm" onclick="exportCSV()" style="color:#c8d4ee;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.07)">&#x2B07; CSV</button>
+    <button class="btn bs sm" onclick="window.print()" style="color:#c8d4ee;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.07)">&#x1F5A8; Print</button>
+  </div>
+</header>
+
+<div class="shell">
+
+<div class="card" style="margin-bottom:22px">
+  <div class="pt">&#x2699; Loan Parameters &mdash; Edit &amp; Recalculate</div>
+  <div class="ig">
+    <div class="fld"><label>Loan Amount (&#x20B9;)</label><input type="number" id="loanAmt" value="199000" min="1000" max="100000000" step="1000"><span class="hint">Sanctioned principal</span><span class="err" id="err-amt">&#x26A0; Min &#x20B9;1,000</span></div>
+    <div class="fld"><label>Annual Interest Rate (%)</label><input type="number" id="annRate" value="8.75" min="0.01" max="50" step="0.01"><span class="hint">Reducing-balance rate</span><span class="err" id="err-rate">&#x26A0; 0.01%&ndash;50% only</span></div>
+    <div class="fld"><label>Total Tenure (Years)</label><input type="number" id="tenYrs" value="5" min="2" max="30" step="1"><span class="hint">2&ndash;30 years</span><span class="err" id="err-ten">&#x26A0; Minimum 2 years</span></div>
+    <div class="fld"><label>Moratorium (Years)</label><input type="number" id="morYrs" value="1" min="0" max="10" step="1"><span class="hint">Interest-only phase</span><span class="err" id="err-mor">&#x26A0; Must be less than tenure</span></div>
+    <div class="fld"><label>Disbursement Month</label><input type="month" id="startDate" value="2024-07"><span class="hint">Loan start date</span></div>
+    <div class="fld"><label>Borrower Name</label><input type="text" id="borName" value="P.A.Sivakumar Raja, Prop: M/s. Jayakumar Bearings, Rajapalayam" placeholder="Name"><span class="hint">For certificate &amp; CSV</span></div>
+  </div>
+  <div class="br">
+    <button class="btn bp" onclick="calculate()">&#x25B6; Calculate</button>
+    <button class="btn bs" onclick="resetDefaults()">&#x21BA; Defaults</button>
+    <button class="btn be" onclick="exportCSV()">&#x2B07; Export CSV</button>
+    <button class="btn bpu" onclick="saveLocal()">&#x1F4BE; Save</button>
+    <button class="btn bd sm" onclick="clearPaid()">&#x1F5D1; Clear Tracking</button>
+    <span class="cs" id="cs"></span>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tb on"  onclick="ST('dashboard',   this)">&#x1F4CA; Dashboard</button>
+  <button class="tb"     onclick="ST('schedule',    this)">&#x1F4CB; Amortization</button>
+  <button class="tb"     onclick="ST('calendar',    this)">&#x1F4C6; EMI Calendar</button>
+  <button class="tb"     onclick="ST('yearsummary', this)">&#x1F4C5; Year Summary</button>
+  <button class="tb"     onclick="ST('prepayment',  this)">&#x26A1; Prepayment Sim</button>
+  <button class="tb"     onclick="ST('compare',     this)">&#x2696; Compare</button>
+  <button class="tb"     onclick="ST('certificate', this)">&#x1F3C5; Certificate</button>
+  <button class="tb"     onclick="ST('formulas',    this)">&#x1F522; Formulas</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="tp on" id="tab-dashboard">
+  <div class="nt info"><span class="ni">&#x2139;&#xFE0F;</span><div><strong>ELGS 5.0:</strong> Year 1 = <strong>interest-only moratorium</strong> (zero principal repaid). Years 2&ndash;5 = reducing-balance <strong>EMI</strong>. Loan fully cleared at Month 60.</div></div>
+  <div class="kg" id="kg"></div>
+  <div class="pgw" id="pgw" style="display:none">
+    <div class="sec">&#x1F4C8; Repayment Progress</div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-s)"><span id="pg-lbl">Paid so far</span><span id="pg-pct">0%</span></div>
+    <div class="pgbg"><div class="pgf fp" id="pg-p" style="width:0%"></div><div class="pgf fi" id="pg-i" style="width:0%"></div></div>
+    <div class="pgl">
+      <span><div class="dot" style="background:var(--teal)"></div>Principal: <strong id="pg-pv">&#x20B9;0</strong></span>
+      <span><div class="dot" style="background:var(--gold)"></div>Interest: <strong id="pg-iv">&#x20B9;0</strong></span>
+      <span>Remaining: <strong id="pg-rv">&mdash;</strong></span>
+      <span id="pg-nd" style="color:var(--red);font-weight:700"></span>
+    </div>
+  </div>
+  <div class="pr">
+    <div class="pb y1"><div class="pd y1"></div>Year 1 &mdash; Moratorium (Interest Only)</div>
+    <div class="pb y2"><div class="pd y2"></div>Years 2&ndash;5 &mdash; EMI (Principal + Interest)</div>
+    <span style="font-size:11px;color:var(--ink-m);margin-left:auto">&#x20B9; Indian format &middot; Reducing balance</span>
+  </div>
+  <div class="cg">
+    <div class="cb"><h3>&#x1F4B0; Balance Reduction</h3><canvas id="cBal" height="210"></canvas></div>
+    <div class="cb"><h3>&#x1F4CA; Monthly Principal vs Interest</h3><canvas id="cPay" height="210"></canvas></div>
+    <div class="cb"><h3>&#x1F967; Total Cost Breakdown</h3><canvas id="cDonut" height="210"></canvas></div>
+    <div class="cb"><h3>&#x1F4C8; Cumulative Interest vs Principal</h3><canvas id="cCum" height="210"></canvas></div>
+  </div>
+</div>
+
+<!-- AMORTIZATION -->
+<div class="tp" id="tab-schedule">
+  <div class="nt warn"><span class="ni">&#x26A0;&#xFE0F;</span><div><strong>&#x1F7E1; Yellow</strong> = Moratorium | <strong>&#x1F7E2; Green</strong> = EMI phase. Click <strong>&#x2713; Paid</strong> to track payments.</div></div>
+  <div class="br" style="margin-bottom:14px">
+    <button class="btn bs sm" onclick="markAll()">&#x2713; Mark All Paid</button>
+    <button class="btn bd sm" onclick="clearPaid()">&#x21BA; Clear</button>
+    <button class="btn be sm" onclick="exportCSV()">&#x2B07; CSV</button>
+    <span style="font-size:11px;color:var(--ink-m)" id="paid-lbl"></span>
+  </div>
+  <div class="tw"><table id="amorTbl"><thead><tr>
+    <th>#</th><th>Month</th><th>Phase</th>
+    <th>Opening (&#x20B9;)</th><th>Payment (&#x20B9;)</th>
+    <th>Interest (&#x20B9;)</th><th>Principal (&#x20B9;)</th>
+    <th>Closing (&#x20B9;)</th><th>Cum.Int (&#x20B9;)</th>
+    <th>Cum.Prin (&#x20B9;)</th><th>Status</th>
+  </tr></thead><tbody id="amorBody"></tbody></table></div>
+</div>
+
+<!-- EMI CALENDAR -->
+<div class="tp" id="tab-calendar">
+  <div class="nt grn"><span class="ni">&#x1F4C6;</span><div>Each tile = one EMI month. Click to mark paid. <strong>&#x1F7E1;</strong> Moratorium &nbsp;|&nbsp; <strong>&#x1F7E2;</strong> EMI &nbsp;|&nbsp; <strong style="color:var(--green)">&#x2713;</strong> Paid &nbsp;|&nbsp; <strong style="color:var(--red)">&#x26A0;</strong> Overdue</div></div>
+  <div class="br" style="margin-bottom:16px">
+    <button class="btn bs sm" onclick="markAll();renderCal()">&#x2713; All Paid</button>
+    <button class="btn bd sm" onclick="clearPaid();renderCal()">&#x21BA; Clear</button>
+  </div>
+  <div class="calg" id="calGrid"></div>
+</div>
+
+<!-- YEAR SUMMARY -->
+<div class="tp" id="tab-yearsummary">
+  <div class="nt grn"><span class="ni">&#x1F4C5;</span><div>Annual rollup. Interest% shows cost composition per year &mdash; 100% in moratorium year, declining each year of EMI phase.</div></div>
+  <div class="tc2" style="margin-bottom:20px">
+    <div class="cb"><h3>&#x1F4CA; Annual Interest vs Principal</h3><canvas id="cYrBar" height="220"></canvas></div>
+    <div class="cb"><h3>&#x1F4C9; Year-End Balance</h3><canvas id="cYrBal" height="220"></canvas></div>
+  </div>
+  <div class="tw" style="max-height:none"><table class="yr-t"><thead><tr>
+    <th>Year</th><th>Phase</th><th>Months</th>
+    <th>Total Interest (&#x20B9;)</th><th>Total Principal (&#x20B9;)</th>
+    <th>Total Payment (&#x20B9;)</th><th>Year-End Balance (&#x20B9;)</th>
+    <th>Interest %</th><th>Principal %</th>
+  </tr></thead><tbody id="yrBody"></tbody></table></div>
+</div>
+
+<!-- PREPAYMENT -->
+<div class="tp" id="tab-prepayment">
+  <div class="nt pur"><span class="ni">&#x26A1;</span><div>Simulate a <strong>lump-sum prepayment</strong> at any month. See exact interest savings vs original schedule.</div></div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="pt">&#x26A1; Prepayment Parameters</div>
+    <div class="ig">
+      <div class="fld"><label>Prepayment Amount (&#x20B9;)</label><input type="number" id="ppAmt" value="50000" min="0" step="1000"><span class="hint">Lump sum to principal</span></div>
+      <div class="fld"><label>After Month #</label><input type="number" id="ppMth" value="12" min="1" max="59"><span class="hint">Applied after this month</span></div>
+      <div class="fld"><label>Strategy</label><select id="ppStrat"><option value="rt">Reduce Tenure (keep EMI same)</option><option value="re">Reduce EMI (keep tenure same)</option></select><span class="hint">Post-prepayment approach</span></div>
+    </div>
+    <button class="btn bp" onclick="simPP()">&#x26A1; Run Simulation</button>
+  </div>
+  <div id="simBand"></div><div id="simTbl"></div>
+</div>
+
+<!-- COMPARE -->
+<div class="tp" id="tab-compare">
+  <div class="nt info"><span class="ni">&#x2696;&#xFE0F;</span><div>Compare ELGS 5.0 against any alternative loan. <strong style="color:var(--green)">Green</strong> = better value. <strong style="color:var(--red)">Red</strong> = worse.</div></div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="pt">&#x2696; Alternative Scenario</div>
+    <div class="ig">
+      <div class="fld"><label>Alt. Amount (&#x20B9;)</label><input type="number" id="cA" value="199000" step="1000"></div>
+      <div class="fld"><label>Alt. Rate (%)</label><input type="number" id="cR" value="10.5" step="0.01"></div>
+      <div class="fld"><label>Alt. Tenure (Yrs)</label><input type="number" id="cT" value="5" step="1"></div>
+      <div class="fld"><label>Alt. Moratorium (Yrs)</label><input type="number" id="cM" value="0" step="1"></div>
+    </div>
+    <button class="btn bp" onclick="runCmp()">&#x2696; Compare</button>
+  </div>
+  <div id="cmpRes"></div>
+  <div class="cb" id="cmpCB" style="display:none;margin-top:18px"><h3>&#x1F4CA; Side-by-Side</h3><canvas id="cCmp" height="200"></canvas></div>
+</div>
+
+<!-- CERTIFICATE -->
+<div class="tp" id="tab-certificate">
+  <div class="nt grn"><span class="ni">&#x1F3C5;</span><div>Official loan summary certificate. Use <strong>&#x1F5A8; Print</strong> to save as PDF for bank / records.</div></div>
+  <div style="text-align:right;margin-bottom:14px"><button class="btn be" onclick="window.print()">&#x1F5A8; Print / Save PDF</button></div>
+  <div class="cert" id="certPanel">
+    <div class="cert-hdr">
+      <div class="cert-seal">&#x1F3E6;</div>
+      <h2>ELGS 5.0 &mdash; LOAN SUMMARY CERTIFICATE</h2>
+      <p>Emergency Credit Line Guarantee Scheme (ECLGS) 5.0 &middot; Jayakumar Bearings &middot; Rajapalayam </p>
+    </div>
+    <div class="cert-grid" id="certGrid"></div>
+    <div class="cert-ftr">
+      <p>Auto-generated by ELGS 5.0 Dashboard for reference purposes only.</p>
+      <p>Presented by: <strong>A.Dhrmakrishnan Raja - 6369885567 &mdash; Rajapalayam, Tamil Nadu</strong> &nbsp;|&nbsp; Date: <strong id="certDate"></strong></p>
+      <p style="margin-top:8px;font-size:10px;color:var(--ink-m)">All calculations use standard reducing-balance EMI methodology. Figures are indicative.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FORMULAS -->
+<div class="tp" id="tab-formulas">
+  <div class="nt info"><span class="ni">&#x1F522;</span><div>All formulas auto-update with your input parameters. Values are live calculations.</div></div>
+  <div class="fg" id="fg"></div>
+  <div class="sec">&#x1F4CC; Key Concepts</div>
+  <div class="fg">
+    <div class="fc"><h4>Reducing Balance Method</h4><p>Interest is charged monthly on the <strong>remaining principal</strong>. As principal falls, so does the interest component &mdash; while EMI stays constant. Early months = more interest; later months = more principal.</p></div>
+    <div class="fc"><h4>Moratorium / Repayment Holiday</h4><p>During moratorium, <strong>only interest is paid</strong>. The principal is completely unchanged. This lowers initial cash outflow but means Phase-2 EMI is calculated on the full original principal.</p></div>
+    <div class="fc"><h4>EMI &mdash; Equated Monthly Instalment</h4><p>Fixed monthly payment by the <strong>annuity formula</strong>: EMI = P &times; r / (1 &minus; (1+r)^&minus;n). The EMI never changes; the split between interest and principal shifts every month.</p></div>
+    <div class="fc"><h4>Effective Cost of Borrowing</h4><p>Total Interest &divide; Principal &times; 100. For ELGS 5.0 at 8.75% with 1-yr moratorium this is ~26&ndash;28% &mdash; the true price of 5 years of capital access beyond just the nominal rate.</p></div>
+    <div class="fc"><h4>Prepayment Benefit</h4><p>Any lump-sum payment reduces outstanding principal. Future interest is calculated on this lower base, so <strong>even a small prepayment creates compounding savings</strong> over the remaining tenure.</p></div>
+    <div class="fc"><h4>Interest vs Principal Over Time</h4><p>In early EMI months, most payment is interest. Over time, as principal shrinks, the interest share shrinks and principal share grows &mdash; even though the EMI amount stays identical every month.</p></div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<button class="fab" onclick="scrollTo({top:0,behavior:'smooth'})">&#x2191; Top</button>
+
+<footer style="background:#141929;color:#5a6a8a;text-align:center;padding:20px 24px;font-size:11.5px;line-height:1.8">
+  <strong style="color:#c8d4ee">ELGS 5.0 &mdash; Loan Amortization &amp; Tracking Dashboard</strong><br>
+  Jayakumar Bearing &middot; Rajapalayam &middot; P.A.Sivakumar Raja &mdash; Mob: 99429 83003 &mdash; Rajapalayam, Tamil Nadu<br>
+  Dharmakrishnan Raja, Rajapalayam &middot; All figures in &#x20B9; (Indian format) &middot; Reducing-balance methodology<br>
+  <span style="color:#3b4d7a;font-size:10px">Built with HTML5 + Chart.js &middot; Data persisted in browser localStorage &middot; Generated <span id="footD"></span></span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ================================================================
+   ELGS 5.0 — PRODUCTION ENGINE v3.0 (FINAL)
+   ================================================================
+   All 17 modules:
+   1.  validate()        – input validation with inline errors
+   2.  buildSchedule()   – pure amortization calculator
+   3.  calculate()       – main orchestrator
+   4.  renderKPIs()      – 6 KPI stat cards
+   5.  renderTable()     – full amortization table + pay tracking
+   6.  renderCal()       – EMI calendar heatmap tiles
+   7.  renderYearSumm()  – annual rollup table + 2 charts
+   8.  renderCharts()    – 4 dashboard Chart.js charts
+   9.  renderFormulas()  – 6 live formula cards
+   10. renderCert()      – printable loan certificate
+   11. updateProgress()  – live payment progress bar
+   12. togglePaid()      – mark/unmark month as paid
+   13. markAll()         – mark all months paid
+   14. clearPaid()       – clear all pay tracking
+   15. simPP()           – prepayment simulator
+   16. runCmp()          – scenario comparison + chart
+   17. exportCSV()       – CSV download with metadata
+   18. saveLocal()       – localStorage persistence
+   19. loadLocal()       – restore saved state
+   ================================================================ */
+
+/* ── State ──────────────────────────────────────────────────── */
+let CH = {};          // Chart instances
+let G  = [];          // globalSchedule
+let PD = new Set();   // paid month numbers
+
+/* ── Dates ──────────────────────────────────────────────────── */
+const NOW  = new Date();
+const DS   = NOW.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+document.getElementById('footD').textContent    = DS;
+document.getElementById('certDate').textContent = DS;
+
+/* ── Formatters ─────────────────────────────────────────────── */
+const MN  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const f$  = n => '&#x20B9;' + (+n.toFixed(2)).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fN  = n =>               (+n.toFixed(2)).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fK  = n => n>=10000000 ? (n/10000000).toFixed(2)+'Cr' : n>=100000 ? (n/100000).toFixed(2)+'L' : n>=1000 ? (n/1000).toFixed(1)+'K' : n.toFixed(0);
+
+function mLbl(base, off) {
+  const d = new Date(base); d.setMonth(d.getMonth()+off);
+  return MN[d.getMonth()]+' '+d.getFullYear();
+}
+function mDate(base, off) {
+  const d = new Date(base); d.setMonth(d.getMonth()+off); return d;
+}
+
+/* ── Chart helpers ──────────────────────────────────────────── */
+function dc(id){ if(CH[id]){CH[id].destroy();delete CH[id];} }
+
+function bOpts(st) {
+  return {
+    responsive:true, animation:{duration:500},
+    plugins:{legend:{labels:{font:{size:11},color:'#4a5168',boxWidth:12}}},
+    scales:{
+      x:{stacked:!!st,ticks:{maxTicksLimit:10,color:'#8a91a8',font:{size:10}},grid:{color:'#f0f0f8'}},
+      y:{stacked:!!st,ticks:{color:'#8a91a8',font:{size:10},callback:v=>'&#x20B9;'+fK(v)},grid:{color:'#f0f0f8'}}
+    }
+  };
+}
+
+/* ================================================================
+   1. VALIDATION
+================================================================ */
+function validate() {
+  let ok=true;
+  function chk(id,bad){const e=document.getElementById(id);bad?(e.classList.add('on'),ok=false):e.classList.remove('on');}
+  const A=+document.getElementById('loanAmt').value;
+  const R=+document.getElementById('annRate').value;
+  const T=+document.getElementById('tenYrs').value;
+  const M=+document.getElementById('morYrs').value;
+  chk('err-amt', isNaN(A)||A<1000);
+  chk('err-rate',isNaN(R)||R<0.01||R>50);
+  chk('err-ten', isNaN(T)||T<2||T>30);
+  chk('err-mor', isNaN(M)||M<0||M>=T);
+  return ok;
+}
+
+/* ================================================================
+   2. AMORTIZATION ENGINE
+================================================================ */
+function buildSchedule(P, annR, tenY, morY, sd) {
+  const r    = annR/100/12;
+  const totM = tenY*12;
+  const morM = morY*12;
+  const emiM = totM-morM;
+  const morP = P*r;
+  const emi  = emiM<=0 ? 0 : r===0 ? P/emiM : P*r/(1-Math.pow(1+r,-emiM));
+  const sdD  = new Date(sd+'-01');
+  const rows = [];
+  let bal=P, cI=0, cP=0;
+
+  for(let m=1; m<=totM; m++){
+    const isMor = m<=morM;
+    const open  = bal;
+    const intA  = open*r;
+    let prin, pmt;
+    if(isMor){ prin=0; pmt=morP; }
+    else { prin=(m===totM)?bal:Math.min(emi-intA,bal); pmt=intA+prin; }
+    const close=Math.max(open-prin,0);
+    cI+=intA; cP+=prin; bal=close;
+    rows.push({m,yr:Math.ceil(m/12),lbl:mLbl(sdD,m-1),dt:mDate(sdD,m-1),
+      isMor,open,pmt,intA,prin,close,cI,cP});
+  }
+  return {rows,emi,morP,r,P,totM,morM,emiM,annR};
+}
+
+/* ================================================================
+   3. MAIN CALCULATE
+================================================================ */
+function calculate(){
+  if(!validate()) return;
+  const P=+document.getElementById('loanAmt').value;
+  const R=+document.getElementById('annRate').value;
+  const T=+document.getElementById('tenYrs').value;
+  const M=+document.getElementById('morYrs').value;
+  const S=document.getElementById('startDate').value;
+  const d=buildSchedule(P,R,T,M,S);
+  G=d.rows;
+  renderKPIs(d); renderTable(d); renderCal();
+  renderYearSumm(d); renderCharts(d);
+  renderFormulas(d); renderCert(d);
+  updateProgress();
+  const t=new Date();
+  document.getElementById('cs').textContent=
+    '\u2713 '+t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0')+':'+t.getSeconds().toString().padStart(2,'0');
+}
+
+/* ================================================================
+   4. KPI CARDS
+================================================================ */
+function renderKPIs(d){
+  const {rows,emi,morP,P,morM,emiM,annR}=d;
+  const tI=rows.reduce((s,r)=>s+r.intA,0);
+  const tP=rows.reduce((s,r)=>s+r.pmt, 0);
+  const kpis=[
+    {i:'&#x1F3E6;',c:'sl',l:'Sanctioned Principal',v:f$(P),s:annR+'% p.a. \u00b7 '+d.totM+' months'},
+    {i:'&#x23F8;',c:'g', l:'Moratorium Monthly',  v:f$(morP),s:morM+' mths \u00d7 '+f$(morP)+' = '+f$(morP*morM)},
+    {i:'&#x2705;',c:'',  l:'Phase-2 Monthly EMI',  v:f$(emi),s:emiM+' months from Month '+(morM+1)},
+    {i:'&#x1F4C8;',c:'r',l:'Total Interest',       v:f$(tI),s:(tI/P*100).toFixed(2)+'% of principal'},
+    {i:'&#x1F4B3;',c:'sl',l:'Total Repayment',     v:f$(tP),s:'Principal + all interest'},
+    {i:'&#x1F3AF;',c:'gr',l:'Loan-Free Month',     v:'Month '+d.totM,s:rows[d.totM-1]?.lbl||'\u2014'},
+  ];
+  document.getElementById('kg').innerHTML=kpis.map(k=>`
+    <div class="kpi ${k.c}">
+      <div class="ki">${k.i}</div>
+      <div class="kl">${k.l}</div>
+      <div class="kv">${k.v}</div>
+      <div class="ks">${k.s}</div>
+    </div>`).join('');
+}
+
+/* ================================================================
+   5. AMORTIZATION TABLE
+================================================================ */
+function renderTable(d){
+  const {rows}=d;
+  let h='';
+  rows.forEach(r=>{
+    const ip=PD.has(r.m);
+    const rc=(r.isMor?'r1':'r2')+(ip?' pd-row':'');
+    const bc=ip?'pybtn ud':'pybtn';
+    const bt=ip?'\u21A9 Undo':'\u2713 Paid';
+    h+=`<tr class="${rc}" id="tr${r.m}">
+      <td>${r.m}</td><td>${r.lbl}</td>
+      <td>${r.isMor?'&#x1F7E1; Interest Only':'&#x1F7E2; EMI'}</td>
+      <td>${fN(r.open)}</td><td><strong>${fN(r.pmt)}</strong></td>
+      <td>${fN(r.intA)}</td><td>${fN(r.prin)}</td>
+      <td>${fN(r.close)}</td><td>${fN(r.cI)}</td>
+      <td>${fN(r.cP)}</td>
+      <td class="tc"><button class="${bc}" onclick="togglePaid(${r.m})">${bt}</button></td>
+    </tr>`;
+  });
+  const tI=rows.reduce((s,r)=>s+r.intA,0);
+  const tPr=rows.reduce((s,r)=>s+r.prin,0);
+  const tPm=rows.reduce((s,r)=>s+r.pmt, 0);
+  h+=`<tr class="gt"><td colspan="3">GRAND TOTAL &mdash; ${rows.length} Months</td>
+    <td>\u2014</td><td>${fN(tPm)}</td><td>${fN(tI)}</td>
+    <td>${fN(tPr)}</td><td>0.00</td><td>${fN(tI)}</td><td>${fN(tPr)}</td><td>\u2014</td></tr>`;
+  document.getElementById('amorBody').innerHTML=h;
+  updPaidLbl();
+}
+
+function togglePaid(m){
+  PD.has(m)?PD.delete(m):PD.add(m);
+  const row=document.getElementById('tr'+m);
+  const r=G[m-1];
+  row.className=(r.isMor?'r1':'r2')+(PD.has(m)?' pd-row':'');
+  const btn=row.querySelector('.pybtn');
+  btn.className=PD.has(m)?'pybtn ud':'pybtn';
+  btn.textContent=PD.has(m)?'\u21A9 Undo':'\u2713 Paid';
+  updateProgress(); updPaidLbl(); renderCal();
+}
+
+function markAll(){ G.forEach(r=>PD.add(r.m)); renderTable({rows:G}); updateProgress(); renderCal(); }
+function clearPaid(){ PD.clear(); if(G.length) renderTable({rows:G}); updateProgress(); renderCal(); }
+
+function updPaidLbl(){
+  const e=document.getElementById('paid-lbl');
+  if(e) e.textContent=PD.size?PD.size+' of '+G.length+' months paid':'';
+}
+
+/* ================================================================
+   6. EMI CALENDAR HEATMAP
+================================================================ */
+function renderCal(){
+  const g=document.getElementById('calGrid');
+  if(!g||!G.length) return;
+  let h='';
+  G.forEach(r=>{
+    const ip=PD.has(r.m);
+    const ov=!ip&&r.dt<NOW;
+    let c=r.isMor?'mor':'emi';
+    if(ip) c='paid'; if(ov) c='over';
+    const ic=ip?'\u2713':ov?'\u26A0':r.isMor?'\u20B9':'\u1F4C5';
+    h+=`<div class="cc2 ${c}" onclick="togglePaid(${r.m})" title="Month ${r.m} \u00b7 ${r.lbl} \u00b7 ${f$(r.pmt).replace(/&#x20B9;/,'\u20B9')}">
+      <div class="cm">${r.lbl}</div>
+      <div class="ca">${ic}</div>
+      <div class="cm">${fN(r.pmt)}</div>
+    </div>`;
+  });
+  g.innerHTML=h;
+}
+
+/* ================================================================
+   7. YEAR SUMMARY
+================================================================ */
+function renderYearSumm(d){
+  const {rows}=d;
+  const yrs=[...new Set(rows.map(r=>r.yr))];
+  let h='',gI=0,gP=0,gT=0;
+  const yL=[],yI=[],yP=[],yB=[];
+  yrs.forEach(yr=>{
+    const yR=rows.filter(r=>r.yr===yr);
+    const i=yR.reduce((s,r)=>s+r.intA,0);
+    const p=yR.reduce((s,r)=>s+r.prin,0);
+    const t=yR.reduce((s,r)=>s+r.pmt, 0);
+    const b=yR[yR.length-1].close;
+    gI+=i;gP+=p;gT+=t;
+    yL.push('Yr '+yr);yI.push(+i.toFixed(2));yP.push(+p.toFixed(2));yB.push(+b.toFixed(2));
+    const ph=yR[0].isMor?'&#x1F7E1; Interest Only':'&#x1F7E2; EMI';
+    h+=`<tr class="${yR[0].isMor?'r1':'r2'}">
+      <td>Year ${yr}</td><td>${ph}</td><td>${yR.length} mths</td>
+      <td>${fN(i)}</td><td>${fN(p)}</td><td>${fN(t)}</td><td>${fN(b)}</td>
+      <td>${(i/t*100).toFixed(1)}%</td><td>${(p/t*100).toFixed(1)}%</td>
+    </tr>`;
+  });
+  h+=`<tr class="gt"><td>TOTAL</td><td>\u2014</td><td>${rows.length} mths</td>
+    <td>${fN(gI)}</td><td>${fN(gP)}</td><td>${fN(gT)}</td><td>0.00</td>
+    <td>${(gI/gT*100).toFixed(1)}%</td><td>${(gP/gT*100).toFixed(1)}%</td></tr>`;
+  document.getElementById('yrBody').innerHTML=h;
+  dc('cYrBar');
+  CH['cYrBar']=new Chart(document.getElementById('cYrBar'),{type:'bar',
+    data:{labels:yL,datasets:[
+      {label:'Principal',data:yP,backgroundColor:'#0d7c73',borderRadius:4,stack:'A'},
+      {label:'Interest', data:yI,backgroundColor:'#c8871a',borderRadius:4,stack:'A'}
+    ]},options:bOpts(true)});
+  dc('cYrBal');
+  CH['cYrBal']=new Chart(document.getElementById('cYrBal'),{type:'line',
+    data:{labels:yL,datasets:[{label:'Year-End Balance',data:yB,
+      borderColor:'#3b4d7a',backgroundColor:'rgba(59,77,122,.12)',
+      fill:true,tension:.3,pointRadius:5,pointBackgroundColor:'#3b4d7a',borderWidth:2.5}]},
+    options:bOpts(false)});
+}
+
+/* ================================================================
+   8. DASHBOARD CHARTS
+================================================================ */
+function renderCharts(d){
+  const {rows,P}=d;
+  const lb=rows.map(r=>r.lbl);
+  const ba=rows.map(r=>+r.close.toFixed(2));
+  const ii=rows.map(r=>+r.intA.toFixed(2));
+  const pp=rows.map(r=>+r.prin.toFixed(2));
+  const ci=rows.map(r=>+r.cI.toFixed(2));
+  const cp=rows.map(r=>+r.cP.toFixed(2));
+  const tI=rows.reduce((s,r)=>s+r.intA,0);
+  dc('cBal');
+  CH['cBal']=new Chart(document.getElementById('cBal'),{type:'line',
+    data:{labels:lb,datasets:[{label:'Outstanding Balance',data:ba,
+      borderColor:'#0d7c73',backgroundColor:'rgba(13,124,115,.12)',
+      fill:true,tension:.35,pointRadius:0,borderWidth:2.5}]},
+    options:bOpts(false)});
+  dc('cPay');
+  CH['cPay']=new Chart(document.getElementById('cPay'),{type:'bar',
+    data:{labels:lb,datasets:[
+      {label:'Principal',data:pp,backgroundColor:'#0d7c73',borderRadius:2,stack:'A'},
+      {label:'Interest', data:ii,backgroundColor:'#c8871a',borderRadius:2,stack:'A'}
+    ]},options:bOpts(true)});
+  dc('cDonut');
+  CH['cDonut']=new Chart(document.getElementById('cDonut'),{type:'doughnut',
+    data:{labels:['Principal','Total Interest'],
+      datasets:[{data:[P,tI],backgroundColor:['#0d7c73','#c8871a'],borderWidth:0,hoverOffset:12}]},
+    options:{responsive:true,cutout:'60%',
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},color:'#4a5168',boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>' \u20B9'+ctx.parsed.toLocaleString('en-IN')}}}}});
+  dc('cCum');
+  CH['cCum']=new Chart(document.getElementById('cCum'),{type:'line',
+    data:{labels:lb,datasets:[
+      {label:'Cum. Interest', data:ci,borderColor:'#c8871a',backgroundColor:'rgba(200,135,26,.12)',fill:true,tension:.35,pointRadius:0,borderWidth:2},
+      {label:'Cum. Principal',data:cp,borderColor:'#3b4d7a',backgroundColor:'rgba(59,77,122,.12)', fill:true,tension:.35,pointRadius:0,borderWidth:2}
+    ]},options:bOpts(false)});
+}
+
+/* ================================================================
+   9. FORMULA CARDS
+================================================================ */
+function renderFormulas(d){
+  const {P,r,morP,emi,morM,emiM,rows,annR}=d;
+  const tI=rows.reduce((s,r)=>s+r.intA,0);
+  const tP=rows.reduce((s,r)=>s+r.pmt, 0);
+  const e1I=P*r, e1P=Math.max(emi-e1I,0);
+  const cards=[
+    {t:'1 \u00b7 Monthly Rate',f:`r_monthly = ${annR}% \u00f7 12\n         = ${(r*100).toFixed(6)}% per month\n         = ${r.toFixed(10)} (decimal)\n\nMonth-1 interest on \u20B9${P.toLocaleString('en-IN')} = \u20B9${(P*r).toFixed(2)}`,n:`Applied to opening balance every month throughout the loan.`},
+    {t:'2 \u00b7 Moratorium Payment',f:`Payment = P \u00d7 r_monthly\n        = \u20B9${P.toLocaleString('en-IN')} \u00d7 ${(r*100).toFixed(6)}%\n        = \u20B9${morP.toFixed(2)} / month\n\nPrincipal repaid = \u20B90.00\nTotal moratorium = \u20B9${(morP*morM).toFixed(2)} (${morM} months)`,n:`Balance remains \u20B9${P.toLocaleString('en-IN')} throughout the ${morM}-month moratorium.`},
+    {t:'3 \u00b7 Phase-2 EMI Formula',f:`EMI = P \u00d7 r / (1 \u2212 (1+r)^\u207Bn)\n    = \u20B9${P.toLocaleString('en-IN')} \u00d7 ${r.toFixed(8)}\n      \u00f7 (1 \u2212 (1+${r.toFixed(8)})^\u207B${emiM})\n    = \u20B9${emi.toFixed(2)} / month\n\nn = ${emiM} months remaining`,n:`Fixed EMI over ${emiM} months. Principal component rises each month.`},
+    {t:'4 \u00b7 Monthly Interest Charge',f:`Interest_m = Opening_m \u00d7 r\n\nMonth ${morM+1} (first EMI):\n  Opening   = \u20B9${P.toFixed(2)} (unchanged from moratorium)\n  Interest  = \u20B9${e1I.toFixed(2)}\n  Principal = \u20B9${e1P.toFixed(2)}`,n:`Interest falls each EMI month as balance reduces. Principal grows correspondingly.`},
+    {t:'5 \u00b7 Closing Balance',f:`Principal_m = EMI \u2212 Interest_m\nClosing_m  = Opening_m \u2212 Principal_m\n\nFinal Month ${morM+emiM}:\n  Closing Balance \u2192 \u20B90.00 \u2713`,n:`Floating-point residual absorbed in final month. Balance guaranteed to reach zero.`},
+    {t:'6 \u00b7 Total Cost Summary',f:`Total Interest  = \u03A3(Interest_m) = \u20B9${tI.toFixed(2)}\nTotal Repayment = P + Total Interest\n               = \u20B9${P.toFixed(2)} + \u20B9${tI.toFixed(2)}\n               = \u20B9${tP.toFixed(2)}\nEffective Cost  = ${(tI/P*100).toFixed(3)}% of principal`,n:`You pay an extra <strong>\u20B9${tI.toFixed(2)}</strong> over ${d.totM} months as total interest cost.`},
+  ];
+  document.getElementById('fg').innerHTML=cards.map(c=>`
+    <div class="fc"><h4>${c.t}</h4><div class="mono">${c.f}</div><p>${c.n}</p></div>`).join('');
+}
+
+/* ================================================================
+   10. CERTIFICATE
+================================================================ */
+function renderCert(d){
+  const {P,emi,morP,rows,annR,morM,emiM,totM}=d;
+  const tI=rows.reduce((s,r)=>s+r.intA,0);
+  const tP=rows.reduce((s,r)=>s+r.pmt, 0);
+  const bn=document.getElementById('borName').value||'Beneficiary';
+  const sd=document.getElementById('startDate').value;
+  const sdF=new Date(sd+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const ed=new Date(sd+'-01'); ed.setMonth(ed.getMonth()+totM-1);
+  const edF=ed.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const rows2=[
+    ['Borrower Name',               bn,                                              ''],
+    ['Loan Scheme',                 'ELGS 5.0 \u2014 Employment-Linked Green Scheme',''],
+    ['Sanctioned Principal',        '\u20B9'+P.toLocaleString('en-IN'),              'go'],
+    ['Annual Interest Rate',        annR+'% per annum (reducing balance)',            ''],
+    ['Total Tenure',                totM+' months ('+totM/12+' years)',              ''],
+    ['Moratorium Period',           morM+' months (interest-only)',                  ''],
+    ['EMI Phase Duration',          emiM+' months',                                  ''],
+    ['Moratorium Monthly Payment',  '\u20B9'+morP.toFixed(2),                        'te'],
+    ['Phase-2 Monthly EMI',         '\u20B9'+emi.toFixed(2),                         'te'],
+    ['Total Interest Payable',      '\u20B9'+tI.toFixed(2),                          ''],
+    ['Total Repayment Amount',      '\u20B9'+tP.toFixed(2),                          'go'],
+    ['Effective Cost of Borrowing', (tI/P*100).toFixed(2)+'% of principal',         ''],
+    ['Disbursement Month',          sdF,                                             ''],
+    ['Final Repayment Month',       edF,                                             ''],
+    ['Issuing Authority',           'Canar Bank Rajapalayam Branch \u2014 Regional Director, TN',''],
+    ['Date of Issue',               DS,                                              ''],
+  ];
+  document.getElementById('certGrid').innerHTML=rows2.map(([k,v,vc])=>`
+    <div class="cr"><span class="ck">${k}</span><span class="cv ${vc}">${v}</span></div>`).join('');
+}
+
+/* ================================================================
+   11. PROGRESS BAR
+================================================================ */
+function updateProgress(){
+  const w=document.getElementById('pgw');
+  if(!w||!G.length) return;
+  w.style.display='block';
+  const pR=G.filter(r=>PD.has(r.m));
+  const tP=G.reduce((s,r)=>s+r.pmt,  0);
+  const pP=pR.reduce((s,r)=>s+r.pmt, 0);
+  const pI=pR.reduce((s,r)=>s+r.intA,0);
+  const pPr=pR.reduce((s,r)=>s+r.prin,0);
+  const pct=tP?(pP/tP*100):0;
+  const ip =tP?(pI/tP*100):0;
+  const pp =tP?(pPr/tP*100):0;
+  const rem=G.filter(r=>!PD.has(r.m)).reduce((s,r)=>s+r.pmt,0);
+  document.getElementById('pg-pct').textContent=pct.toFixed(1)+'% paid';
+  document.getElementById('pg-lbl').textContent='Paid \u20B9'+pP.toFixed(2)+' of \u20B9'+tP.toFixed(2);
+  document.getElementById('pg-p').style.width=pp+'%';
+  document.getElementById('pg-i').style.width=ip+'%';
+  document.getElementById('pg-pv').textContent='\u20B9'+pPr.toFixed(2);
+  document.getElementById('pg-iv').textContent='\u20B9'+pI.toFixed(2);
+  document.getElementById('pg-rv').textContent='\u20B9'+rem.toFixed(2);
+  const nd=G.find(r=>!PD.has(r.m));
+  const ndE=document.getElementById('pg-nd');
+  if(ndE) ndE.textContent=nd?'\u26A1 Next: '+nd.lbl+' \u2014 \u20B9'+nd.pmt.toFixed(2):'\uD83C\uDF89 All paid!';
+}
+
+/* ================================================================
+   12. PREPAYMENT SIMULATOR
+================================================================ */
+function simPP(){
+  if(!G.length){alert('Calculate base schedule first.');return;}
+  const P  =+document.getElementById('loanAmt').value;
+  const R  =+document.getElementById('annRate').value;
+  const T  =+document.getElementById('tenYrs').value;
+  const M  =+document.getElementById('morYrs').value;
+  const S  = document.getElementById('startDate').value;
+  const PP =+document.getElementById('ppAmt').value||0;
+  const AM =+document.getElementById('ppMth').value;
+  const ST = document.getElementById('ppStrat').value;
+  const base=buildSchedule(P,R,T,M,S);
+  const r=base.r, morM=base.morM;
+  const oI=base.rows.reduce((s,r)=>s+r.intA,0);
+  const oT=base.rows.reduce((s,r)=>s+r.pmt, 0);
+  const sdD=new Date(S+'-01');
+  let bal=P,cI=0,cP=0,revR=[];
+  for(let m=1;m<=Math.min(AM,base.totM);m++){
+    const isMor=m<=morM;
+    const open=bal, intA=open*r;
+    const prin=isMor?0:Math.min(base.emi-intA,bal);
+    const pmt=intA+prin, close=Math.max(open-prin,0);
+    cI+=intA;cP+=prin;bal=close;
+    revR.push({m,yr:Math.ceil(m/12),lbl:mLbl(sdD,m-1),isMor,open,pmt,intA,prin,close,cI,cP,pp:0});
+  }
+  const act=Math.min(PP,bal); bal-=act;
+  const remM=base.totM-AM;
+  const ne=ST==='re'?(remM>0&&r>0?bal*r/(1-Math.pow(1+r,-remM)):bal/(remM||1)):base.emi;
+  let m2=AM+1,g=0;
+  while(bal>0.005&&g<1200){
+    const open=bal,intA=open*r,prin=Math.min(ne-intA,bal),pmt=intA+prin,close=Math.max(open-prin,0);
+    cI+=intA;cP+=prin;bal=close;
+    revR.push({m:m2,yr:Math.ceil(m2/12),lbl:mLbl(sdD,m2-1),isMor:false,open,pmt,intA,prin,close,cI,cP,pp:m2===AM+1?act:0});
+    m2++;g++;if(close<0.005)break;
+  }
+  const rI=revR.reduce((s,r)=>s+r.intA,0);
+  const rT=revR.reduce((s,r)=>s+r.pmt, 0)+act;
+  const sI=Math.max(oI-rI,0), sT=Math.max(oT-rT,0), mS=Math.max(base.totM-revR.length,0);
+  document.getElementById('simBand').innerHTML=`
+    <div class="rb">
+      <div class="rbi"><div class="rl">Prepayment</div><div class="rv">\u20B9${act.toFixed(2)}</div><div class="rs">After Month ${AM}</div></div>
+      <div class="rbi"><div class="rl">Interest Saved</div><div class="rv">\u20B9${sI.toFixed(2)}</div><div class="rs">vs original</div></div>
+      <div class="rbi"><div class="rl">Total Savings</div><div class="rv">\u20B9${sT.toFixed(2)}</div><div class="rs">Payment reduction</div></div>
+      <div class="rbi"><div class="rl">Months Saved</div><div class="rv">${mS} months</div><div class="rs">Tenure shortened</div></div>
+      <div class="rbi"><div class="rl">Revised EMI</div><div class="rv">\u20B9${ne.toFixed(2)}</div><div class="rs">Phase-2 post-prepay</div></div>
+      <div class="rbi"><div class="rl">New Final Month</div><div class="rv">Month ${revR.length}</div><div class="rs">${revR[revR.length-1]?.lbl}</div></div>
+    </div>`;
+  let th=`<div class="tw" style="max-height:380px"><table>
+    <thead><tr><th>#</th><th>Month</th><th>Phase</th>
+    <th>Opening(\u20B9)</th><th>Payment(\u20B9)</th><th>Prepay(\u20B9)</th>
+    <th>Interest(\u20B9)</th><th>Principal(\u20B9)</th><th>Closing(\u20B9)</th>
+    </tr></thead><tbody>`;
+  revR.forEach(r=>{
+    const pp=r.pp>0?`<strong style="color:var(--purple)">${fN(r.pp)}</strong>`:'&mdash;';
+    th+=`<tr class="${r.isMor?'r1':'r2'}">
+      <td>${r.m}</td><td>${r.lbl}</td>
+      <td>${r.isMor?'&#x1F7E1; Interest Only':'&#x1F7E2; EMI'}</td>
+      <td>${fN(r.open)}</td><td>${fN(r.pmt)}</td><td>${pp}</td>
+      <td>${fN(r.intA)}</td><td>${fN(r.prin)}</td><td>${fN(r.close)}</td>
+    </tr>`;
+  });
+  const si=revR.reduce((s,r)=>s+r.intA,0), sp=revR.reduce((s,r)=>s+r.prin,0), st=revR.reduce((s,r)=>s+r.pmt,0);
+  th+=`<tr class="gt"><td colspan="3">REVISED TOTAL (${revR.length} months)</td>
+    <td>\u2014</td><td>${fN(st)}</td><td>${fN(act)}</td>
+    <td>${fN(si)}</td><td>${fN(sp)}</td><td>0.00</td>
+  </tr></tbody></table></div>`;
+  document.getElementById('simTbl').innerHTML=th;
+}
+
+/* ================================================================
+   13. COMPARISON
+================================================================ */
+function runCmp(){
+  if(!G.length){alert('Calculate base schedule first.');return;}
+  const P1=+document.getElementById('loanAmt').value, R1=+document.getElementById('annRate').value;
+  const T1=+document.getElementById('tenYrs').value,  M1=+document.getElementById('morYrs').value;
+  const P2=+document.getElementById('cA').value||P1,  R2=+document.getElementById('cR').value||R1;
+  const T2=+document.getElementById('cT').value||T1,  M2=+document.getElementById('cM').value||0;
+  const S=document.getElementById('startDate').value;
+  const d1=buildSchedule(P1,R1,T1,M1,S), d2=buildSchedule(P2,R2,T2,M2,S);
+  const i1=d1.rows.reduce((s,r)=>s+r.intA,0), t1=d1.rows.reduce((s,r)=>s+r.pmt,0);
+  const i2=d2.rows.reduce((s,r)=>s+r.intA,0), t2=d2.rows.reduce((s,r)=>s+r.pmt,0);
+  const rows=[
+    ['Principal',           '\u20B9'+P1.toLocaleString('en-IN'),'\u20B9'+P2.toLocaleString('en-IN'),P1<=P2],
+    ['Annual Rate',         R1.toFixed(2)+'%',R2.toFixed(2)+'%',R1<=R2],
+    ['Tenure',              T1+' yrs',T2+' yrs',T1<=T2],
+    ['Moratorium',          M1+' yr(s)',M2+' yr(s)',true],
+    ['Moratorium Monthly',  '\u20B9'+d1.morP.toFixed(2),'\u20B9'+d2.morP.toFixed(2),d1.morP<=d2.morP],
+    ['Phase-2 EMI',         '\u20B9'+d1.emi.toFixed(2),'\u20B9'+d2.emi.toFixed(2),d1.emi<=d2.emi],
+    ['Total Interest',      '\u20B9'+i1.toFixed(2),'\u20B9'+i2.toFixed(2),i1<=i2],
+    ['Total Repayment',     '\u20B9'+t1.toFixed(2),'\u20B9'+t2.toFixed(2),t1<=t2],
+    ['Effective Cost',      (i1/P1*100).toFixed(2)+'%',(i2/P2*100).toFixed(2)+'%',i1/P1<=i2/P2],
+    ['Final Month',         'Month '+d1.totM,'Month '+d2.totM,d1.totM<=d2.totM],
+  ];
+  let h=`<div class="cmp">
+    <div class="ch">Parameter</div>
+    <div class="ch hl">\u2705 ELGS 5.0 (Current)</div>
+    <div class="ch">Alternative Scenario</div>`;
+  rows.forEach(([l,v1,v2,w])=>{
+    h+=`<div class="cc lb">${l}</div>
+      <div class="cc ${w?'win':'lose'}">${v1}</div>
+      <div class="cc ${!w?'win':'lose'}">${v2}</div>`;
+  });
+  h+='</div>';
+  document.getElementById('cmpRes').innerHTML=h;
+  const cb=document.getElementById('cmpCB'); cb.style.display='block';
+  dc('cCmp');
+  CH['cCmp']=new Chart(document.getElementById('cCmp'),{type:'bar',
+    data:{labels:['Total Interest','Total Payment','EMI','Mor. Payment'],
+      datasets:[
+        {label:'ELGS 5.0',   data:[i1,t1,d1.emi,d1.morP],backgroundColor:'#0d7c73',borderRadius:4},
+        {label:'Alternative',data:[i2,t2,d2.emi,d2.morP],backgroundColor:'#c8871a',borderRadius:4}
+      ]},options:bOpts(false)});
+}
+
+/* ================================================================
+   14. CSV EXPORT
+================================================================ */
+function exportCSV(){
+  if(!G.length){alert('Calculate schedule first.');return;}
+  const P=+document.getElementById('loanAmt').value;
+  const R=+document.getElementById('annRate').value;
+  const T=+document.getElementById('tenYrs').value;
+  const M=+document.getElementById('morYrs').value;
+  const S=document.getElementById('startDate').value;
+  const bn=document.getElementById('borName').value||'Beneficiary';
+  const d=buildSchedule(P,R,T,M,S);
+  const tI=d.rows.reduce((s,r)=>s+r.intA,0);
+  const tP=d.rows.reduce((s,r)=>s+r.pmt, 0);
+  let c='ELGS 5.0 Loan Amortization Schedule\n';
+  c+=`Borrower,"${bn}"\nPrincipal,"${P}"\nAnnual Rate,${R}%\n`;
+  c+=`Tenure,${T} years\nMoratorium,${M} years\n`;
+  c+=`Moratorium Monthly,"${d.morP.toFixed(2)}"\nPhase-2 EMI,"${d.emi.toFixed(2)}"\n`;
+  c+=`Total Interest,"${tI.toFixed(2)}"\nTotal Repayment,"${tP.toFixed(2)}"\n`;
+  c+=`Effective Cost,"${(tI/P*100).toFixed(3)}% of principal"\nGenerated,${DS}\n\n`;
+  c+='Month,Month-Year,Year,Phase,Opening,Payment,Interest,Principal,Closing,Cum.Interest,Cum.Principal,Paid\n';
+  d.rows.forEach(r=>{
+    c+=[r.m,r.lbl,r.yr,r.isMor?'Interest Only':'EMI',
+      r.open.toFixed(2),r.pmt.toFixed(2),r.intA.toFixed(2),
+      r.prin.toFixed(2),r.close.toFixed(2),r.cI.toFixed(2),r.cP.toFixed(2),
+      PD.has(r.m)?'YES':'NO'].join(',')+'\n';
+  });
+  const bl=new Blob([c],{type:'text/csv'});
+  const url=URL.createObjectURL(bl);
+  const a=document.createElement('a');
+  a.href=url;a.download=`ELGS5_${bn.replace(/\s+/g,'_')}_${S}.csv`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+/* ================================================================
+   15. LOCALSTORAGE PERSISTENCE
+================================================================ */
+function saveLocal(){
+  try{
+    localStorage.setItem('elgs5',JSON.stringify({
+      loanAmt:document.getElementById('loanAmt').value,
+      annRate:document.getElementById('annRate').value,
+      tenYrs: document.getElementById('tenYrs').value,
+      morYrs: document.getElementById('morYrs').value,
+      startDate:document.getElementById('startDate').value,
+      borName:document.getElementById('borName').value,
+      paid:[...PD]
+    }));
+    const cs=document.getElementById('cs');
+    cs.textContent='\uD83D\uDCBE Saved!';
+    setTimeout(()=>cs.textContent='',2500);
+  }catch(e){alert('Storage unavailable.');}
+}
+
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem('elgs5');
+    if(!raw) return;
+    const s=JSON.parse(raw);
+    if(s.loanAmt)   document.getElementById('loanAmt').value   =s.loanAmt;
+    if(s.annRate)   document.getElementById('annRate').value   =s.annRate;
+    if(s.tenYrs)    document.getElementById('tenYrs').value    =s.tenYrs;
+    if(s.morYrs)    document.getElementById('morYrs').value    =s.morYrs;
+    if(s.startDate) document.getElementById('startDate').value =s.startDate;
+    if(s.borName)   document.getElementById('borName').value   =s.borName;
+    if(s.paid)      PD=new Set(s.paid);
+  }catch(e){}
+}
+
+/* ================================================================
+   16. TAB SWITCH
+================================================================ */
+function ST(id,btn){
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('on');
+  if(btn) btn.classList.add('on');
+}
+
+/* ================================================================
+   17. RESET DEFAULTS
+================================================================ */
+function resetDefaults(){
+  document.getElementById('loanAmt').value   =199000;
+  document.getElementById('annRate').value   =8.75;
+  document.getElementById('tenYrs').value    =5;
+  document.getElementById('morYrs').value    =1;
+  document.getElementById('startDate').value ='2024-07';
+  document.getElementById('borName').value   ='P.A.Sivakumar Raja, Prop.: M/s. Jayakumar Bearings';
+  PD.clear(); calculate();
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+window.addEventListener('DOMContentLoaded',()=>{
+  loadLocal();
+  calculate();
+});
+</script>
+</body>
+</html>"""
+
+path = '/mnt/user-data/outputs/ELGS_5_Loan_Dashboard.html'
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(html)
+print(f"Written: {len(html)} chars, {html.count(chr(10))} lines")
+print("File size:", os.path.getsize(path), "bytes")
+PYEOF
+Output
